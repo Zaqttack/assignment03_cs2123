@@ -19,6 +19,9 @@ typedef enum priority { FOREGROUND, BACKGROUND } priority;
 typedef struct schedule
 {
     //TODO: Put the data for your schedule program here!
+    Queue *foreground;
+    Queue *background;
+    int totalTimeSteps;
 }  schedule;
 
 schedule* createSchedule( );

@@ -1,5 +1,8 @@
 #ifndef _process_h
 #define _process_h
+#include <stdio.h>
+
+#include "multilevelQueueScheduler.h"
 
 typedef struct processData
 {
@@ -20,6 +23,13 @@ typedef struct processData
 typedef struct process
 {
     //TODO: Put the data for your process here!
+    char *processName;
+    processData data;
+    int timeSteps;
+    priority pry;
+    int atHead;
+    int timeStepsTaken;
+    int addedToBackground;
 }  process;
 
 #endif
