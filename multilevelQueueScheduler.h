@@ -7,8 +7,6 @@
 #include "queue.h"
 #include "processSimulator.h"
 
-typedef enum priority { FOREGROUND, BACKGROUND } priority;
-
 /* struct schedule (only accessed in student written code)
  *
  * Data related to the order the processes should be scheduled in.

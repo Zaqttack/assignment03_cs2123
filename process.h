@@ -1,8 +1,7 @@
 #ifndef _process_h
 #define _process_h
-#include <stdio.h>
 
-#include "multilevelQueueScheduler.h"
+typedef enum priority { FOREGROUND, BACKGROUND } priority;
 
 typedef struct processData
 {
@@ -23,8 +22,8 @@ typedef struct processData
 typedef struct process
 {
     //TODO: Put the data for your process here!
-    char *processName;
-    processData data;
+    char processName[21];
+    processData *data;
     int timeSteps;
     priority pry;
     int atHead;

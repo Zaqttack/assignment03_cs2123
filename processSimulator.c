@@ -166,6 +166,7 @@ void startProcess( char *pName, processData *pData ){
  */
 void authentication( char *pName, processData *pData ){
     if( pName==NULL || pData->name==NULL || strcmp(pName, pData->name) ){
+        fprintf(stderr, "pName: %s || pData->name: %s :: \n", pName, pData->name);
         fprintf(stderr, "Authentication failed - process data was corrupted!\n");
     }
 }

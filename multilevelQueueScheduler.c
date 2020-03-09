@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "multilevelQueueScheduler.h"
 
@@ -27,6 +28,7 @@ schedule* createSchedule( ) {
  */
 bool isScheduleUnfinished( schedule *ps ) {
     /* TODO: check if there are any process still in a queue.  Return TRUE if there is. */
+    // printf("a. entering isScheduleUnfinished\n");
 
     return !isEmpty(ps->foreground) || !isEmpty(ps->background); /* TODO: Replace with your return value */
 }
@@ -41,16 +43,28 @@ bool isScheduleUnfinished( schedule *ps ) {
 void addNewProcessToSchedule( schedule *ps, char *processName, int runtime, priority p ) {
     /* TODO: complete this function.
     The functions "initializeProcessData" in processSimulator.c will be useful in completing this. */
-    processData *proc;
-    proc = initializeProcessData(processName);
+    queueType qt = (queueType)malloc(sizeof(process) + sizeof(processData));
+    // qt->data = (processData*)malloc(sizeof(processData));
 
-    ps->background->qFront->qt->processName = processName;
-    ps->background->qFront->qt->data = *proc;
-    ps->background->qFront->qt->pry = p;
-    ps->background->qFront->qt->timeSteps = runtime;
-    ps->background->qFront->qt->atHead = 0;
-    ps->background->qFront->qt->timeStepsTaken = 0;
-    ps->background->qFront->qt->addedToBackground = ps->totalTimeSteps;
+    processData *pData = initializeProcessData(processName);
+    qt->data = pData;
+
+    // printf("Name: %s\n", qt->data->name);
+
+    // memcpy(qt->data, pData, sizeof(processData));
+    memset(qt->processName, 0, 21);
+    memcpy((qt->processName), processName, 20);
+
+    qt->pry = p;
+    qt->timeSteps = runtime;
+    qt->atHead = 0;
+    qt->timeStepsTaken = 0;
+    qt->addedToBackground = ps->totalTimeSteps;
+
+    if(p == BACKGROUND)
+        enqueue(ps->background, qt);
+    else
+        enqueue(ps->foreground, qt);
 }
 
 /* simulateNextTimeStep
@@ -62,45 +76,47 @@ void addNewProcessToSchedule( schedule *ps, char *processName, int runtime, prio
  * This function should just return this string.
  */
 char* simulateNextTimeStep( schedule *ps ) {
-    /* TODO: complete this function.
-    The function "runProcessForOneTimeStep", "promoteProcess", and "freeProcessData"
-    in processSimulator.c will be useful in completing this. */
-    queueType qt;
+    char * newProcessName = NULL;
     ps->totalTimeSteps++;
-    if(ps->totalTimeSteps - ps->background->qFront->qt->addedToBackground > 50)
-        enqueue(ps->foreground, dequeue(ps->background));
+
+    while(ps->totalTimeSteps - getNext(ps->background)->addedToBackground > 50) {
+        queueType qt = dequeue(ps->background);
+        enqueue(ps->foreground, qt);
+        promoteProcess(qt->processName, qt->data);
+    }
 
     if(!isEmpty(ps->foreground)) {
-        runProcessForOneTimeStep(ps->foreground->qFront->qt->processName, &ps->foreground->qFront->qt->data);
-        ps->foreground->qFront->qt->timeStepsTaken++;
-        ps->foreground->qFront->qt->atHead++;
+        getNext(ps->foreground)->timeStepsTaken++;
+        getNext(ps->foreground)->atHead++;
+        newProcessName = runProcessForOneTimeStep(
+            getNext(ps->foreground)->processName, 
+            (getNext(ps->foreground)->data));
 
-        if(ps->foreground->qFront->qt->timeStepsTaken >= ps->foreground->qFront->qt->timeSteps) {
-            /*
-            queueType qt was created so that after dequeue'ing occured the processData could be
-            freed before the dequeued element was freed 
-            */
-            qt = dequeue(ps->foreground);
-            freeProcessData(&ps->foreground->qFront->qt->data);
+        if(getNext(ps->foreground)->timeStepsTaken >= getNext(ps->foreground)->timeSteps) {
+            queueType qt = dequeue(ps->foreground);
+            freeProcessData(qt->data);
             free(qt);
         }
-        else if(ps->foreground->qFront->qt->atHead == 5) {
-            ps->foreground->qFront->qt->atHead = 0;
+        else if(getNext(ps->foreground)->atHead == 5) {
+            getNext(ps->foreground)->atHead = 0;
             enqueue(ps->foreground, dequeue(ps->foreground));
         }
     }
     else {
-        if(ps->background->qFront->qt->timeStepsTaken >= ps->background->qFront->qt->timeSteps) {
-            qt = dequeue(ps->background);
-            freeProcessData(&ps->background->qFront->qt->data);
+        if(getNext(ps->background)->timeStepsTaken >= getNext(ps->background)->timeSteps) {
+            queueType qt = dequeue(ps->background);
+            freeProcessData(qt->data);
             free(qt);
         }
         else {
-            runProcessForOneTimeStep(ps->background->qFront->qt->processName, &ps->background->qFront->qt->data);
+            getNext(ps->background)->timeStepsTaken++;
+            newProcessName = runProcessForOneTimeStep(
+                getNext(ps->background)->processName, 
+                (getNext(ps->background)->data));
         }
     }
 
-    return NULL; /* TODO: Replace with your return value */
+    return newProcessName; /* TODO: Replace with your return value */
 }
 
 /* freeSchedule
@@ -127,5 +143,5 @@ void freeSchedule( schedule *ps ) {
     }
     freeQueue(ps->foreground);
     freeQueue(ps->background);
-    freeSchedule(ps);
+    free(ps);
 }
